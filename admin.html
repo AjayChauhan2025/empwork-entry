@@ -288,7 +288,7 @@ tfoot tr {
 
 function logout() {
     localStorage.removeItem("loggedUser");
-    window.location.href = "login.html";
+    window.location.href = "index.html";
 }
 
 function showSection(id) {
@@ -516,17 +516,7 @@ function exportPDF() {
             loadReport();
         }
     }
-    window.onload = function () {
-        let user = JSON.parse(localStorage.getItem("loggedUser") || "{}");
-
-        if (user && user.fullname) {
-            document.getElementById("empName").value = user.fullname;
-            document.getElementById("empName").readOnly = true;
-        } else {
-            alert("યૂઝર મળ્યો નહીં. ફરીથી લોગિન કરો.");
-            window.location.href = "login.html";
-        }
-    };
+    
 
 
 

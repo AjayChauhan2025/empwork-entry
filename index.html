@@ -108,7 +108,7 @@ body {
 
         if (!uname || !pass) {
             errorMsg.textContent = "કૃપા કરીને યુઝરનેમ અને પાસવર્ડ નાખો.";
-            return;
+            return false;
         }
 
         // localStorage માંથી બધા યુઝરો મેળવો
@@ -125,7 +125,7 @@ body {
 
         if (!user) {
             errorMsg.textContent = "યૂઝર મળ્યો નહીં. ફરીથી લોગિન કરો.";
-            return;
+            return false;
         }
 
         // સફળ લોગિન પછી યુઝરને localStorage માં સેટ કરો
