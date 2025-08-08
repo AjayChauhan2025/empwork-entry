@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Work Entry</title>
+<style>
+body {
+    font-family: Arial;   
+    background: #f0f2f5;
+}
+
+/* Logout Button */
+.logout-btn {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    background: #dc3545;
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.logout-btn:hover { background: #c82333; }
+
+/* Card */
+.card {
+    background: white;
+    padding: 15px;
+    margin: 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* First card pastel blue */
+.card:first-of-type { background: #e6f3ff; }
+
+/* Form fields */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+.form-group label { font-weight: bold; }
+.form-group input {
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Table design */
+.table-wrapper {
+    max-height: 300px; /* scrollable area */
+    overflow-y: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: center;
+}
+th {
+    background: #2d6cdf;
+    color: white;
+}
+#workTable tbody tr:nth-child(odd) { background: #ffffff; }
+#workTable tbody tr:nth-child(even) { background: #f9faff; }
+
+/* TOTAL row fixed */
+tfoot tr {
+    background: #d9ecff;
+    font-weight: bold;
+    position: sticky;
+    bottom: 0;
+}
+
+/* Stats boxes */
+.stats { display: flex; gap: 15px; margin-bottom: 10px; }
+.stat-box {
+    padding: 10px; border-radius: 6px; flex: 1; font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+#todaySalary { background: #ffe6e6; color: #b30000; }
+#monthlyAvgPieces { background: #e6f7ff; color: #005580; }
+#monthlyAvgSalary { background: #e6ffe6; color: #006600; }
+#totalSalary { background: #fff0e6; color: #804000; }
+
+/* Buttons */
+.btn-save {
+    background: #28a745; color: white; padding: 12px 20px; font-size: 16px;
+    border: none; border-radius: 6px; cursor: pointer; font-weight: bold;
+    display: inline-flex; align-items: center; gap: 5px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+.btn-save:hover { background: #218838; }
+.btn-delete {
+    background: #dc3545; color: white; padding: 10px 16px; font-size: 14px;
+    border: none; border-radius: 6px; cursor: pointer; margin-left: 15px;
+    display: inline-flex; align-items: center; gap: 5px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+.btn-delete:hover { background: #c82333; }
+
+/* Modal */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+    z-index: 1000; display: none;
+}
+.modal-box {
+    background: white; padding: 20px; border-radius: 8px; text-align: center; width: 300px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2); font-size: 16px;
+}
+.modal-buttons {margin-top: 15px;}
+.modal-buttons button {
+    margin: 0 8px; padding: 6px 15px; font-size: 14px; cursor: pointer;
+    border: none; border-radius: 4px;
+}
+.btn-yes {background: #28a745; color: white;}
+.btn-no {background: #dc3545; color: white;}
+</style>
+</head>
+<body>
+
+<!-- Logout Button -->
+<button class="logout-btn" onclick="logout()">🚪 Logout</button>
+
+<div class="card">
+    <h2>Work Entry</h2>
+    
+    Name: <input id="empName" readonly>
+    Date: <input type="date" id="workDate">
+
+    <div class="form-group">
+        <label>ActivePart:</label><input type="number" id="ap" min="0">
+        <label>Marking:</label><input type="number" id="mk" min="0">
+        <label>ReMarking:</label><input type="number" id="rm" min="0">
+        <label>OutParty:</label><input type="number" id="op" min="0">
+    </div>
+
+    <br>
+    <button onclick="saveEntry()" class="btn-save">💾 Save Entry</button>
+    <button onclick="showDeleteAllModal()" class="btn-delete">🗑️ Delete All Entries</button>
+</div>
+<div class="card">
+    <h2>Update Profile</h2>
+    <label>User name:</label>
+    <input type="text" id="Username">
+
+    <label>New Password:</label>
+    <input type="password" id="newPassword">
+
+    <button onclick="updateProfile()" class="btn-save">🔒 Update Profile</button>
+</div>
+
+<div class="card">
+    <div class="stats">
+        <div class="stat-box" id="todaySalary">Today Salary: ₹0.00</div>
+        <div class="stat-box" id="monthlyAvgPieces">Monthly Avg Pieces: 0</div>
+        <div class="stat-box" id="monthlyAvgSalary">Monthly Avg Salary: ₹0.00</div>
+        <div class="stat-box" id="totalSalary">Total Salary: ₹0.00</div>
+    </div>
+ 
+
+
+    <h2>Entries</h2>
+    <div class="table-wrapper">
+        <table id="workTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Active</th>
+                    <th>Marking</th>
+                    <th>ReMarking</th>
+                    <th>OutParty</th>
+                    <th>ActivePartSalary</th>
+                    <th>MarkingSalary</th>
+                    <th>ReMarkingSalary</th>
+                    <th>OutPartySalary</th>
+                    <th>TotalSalary</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr id="totalRow">
+                    <td colspan="2">TOTAL</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-box">
+        <div id="modalMessage">આ તારીખ માટે પહેલેથી એન્ટ્રી છે. શું તમે Update કરવા માંગો છો?</div>
+        <div class="modal-buttons">
+            <button class="btn-yes" onclick="modalYes()">Yes</button>
+            <button class="btn-no" onclick="modalNo()">No</button>
+        </div>
+    </div>
+</div>
+
+<div id="deleteAllModal" class="modal-overlay">
+    <div class="modal-box">
+        <div>શું તમે બધી એન્ટ્રીઓ ડિલીટ કરવા માંગો છો?</div>
+        <div class="modal-buttons">
+            <button class="btn-yes" onclick="deleteAllEntries()">Yes</button>
+            <button class="btn-no" onclick="closeDeleteAllModal()">No</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const RATE_ACTIVE=2.6, RATE_MARKING=2.3, RATE_REMARK=3.0, RATE_OUTPARTY=2.6;
+    document.getElementById("workDate").value = new Date().toISOString().split("T")[0];
+    document.addEventListener("DOMContentLoaded", function () {
+        const user = JSON.parse(localStorage.getItem("loggedUser") || "null");
+        if (!user) {
+            alert("યૂઝર મળ્યો નહીં. ફરીથી લોગિન કરો.");
+            window.location.href = "login.html";
+            return;
+        }
+
+        // set user full name in empName field
+        document.getElementById("empName").value = user.fullname || user.username;
+    });
+
+let entries = JSON.parse(localStorage.getItem("workEntries") || "[]");
+let pendingEntry = null;
+updateTable();
+
+function logout() {
+    if (confirm("Do you really want to logout?")) {
+        localStorage.removeItem("loggedUser");
+        window.location.href = "login.html";
+    }
+    }
+    
+function showModal(message, entry) {
+    document.getElementById("modalMessage").innerText = message;
+    pendingEntry = entry;
+    document.getElementById("confirmModal").style.display = "flex";
+}
+function modalYes() {
+    let idx = entries.findIndex(e => e.name===pendingEntry.name && e.date===pendingEntry.date);
+    if(idx >= 0) entries.splice(idx, 1);
+    entries.push(pendingEntry);
+    localStorage.setItem("workEntries", JSON.stringify(entries));
+    updateTable();
+    clearWorkFields();
+    closeModal();
+    alert("✅ Saved!");
+}
+function modalNo() { closeModal(); }
+function closeModal() {
+    document.getElementById("confirmModal").style.display = "none";
+    pendingEntry = null;
+}
+function showDeleteAllModal() {
+    document.getElementById("deleteAllModal").style.display = "flex";
+}
+function closeDeleteAllModal() {
+    document.getElementById("deleteAllModal").style.display = "none";
+}
+function deleteAllEntries() {
+    localStorage.removeItem("workEntries");
+    entries = [];
+    updateTable();
+    closeDeleteAllModal();
+    alert("🗑️ બધી એન્ટ્રીઓ ડિલીટ થઈ ગઈ છે!");
+}
+function saveEntry(){
+    let name = document.getElementById("empName").value.trim();
+    let date = document.getElementById("workDate").value;
+    if(!name || !date){ alert("Enter name & date"); return; }
+
+    let ap = +document.getElementById("ap").value || 0;
+    let mk = +document.getElementById("mk").value || 0;
+    let rm = +document.getElementById("rm").value || 0;
+    let op = +document.getElementById("op").value || 0;
+
+    let aps = ap * RATE_ACTIVE;
+    let mks = mk * RATE_MARKING;
+    let rms = rm * RATE_REMARK;
+    let ops = op * RATE_OUTPARTY;
+    let total = aps + mks + rms + ops;
+
+    let entryData = {name,date,ap,mk,rm,op,aps,mks,rms,ops,total};
+    let idx = entries.findIndex(e => e.name===name && e.date===date);
+    if(idx >= 0){
+        showModal("આ તારીખ માટે પહેલેથી એન્ટ્રી છે. શું તમે Update કરવા માંગો છો?", entryData);
+    } else {
+        entries.push(entryData);
+        localStorage.setItem("workEntries", JSON.stringify(entries));
+        updateTable();
+        clearWorkFields(); // Save પછી fields ખાલી
+        alert("✅ Saved!");
+    }
+}
+function clearWorkFields() {
+    document.getElementById("ap").value = "";
+    document.getElementById("mk").value = "";
+    document.getElementById("rm").value = "";
+    document.getElementById("op").value = "";
+}
+function updateTable(){
+    let tbody = document.querySelector("#workTable tbody");
+    tbody.innerHTML = "";
+    let totalAp=0, totalMk=0, totalRm=0, totalOp=0;
+    let totalAPS=0, totalMKS=0, totalRMS=0, totalOPS=0, totalSalary=0;
+    let totalPiecesSum=0;
+
+    entries.forEach((e,i)=>{
+        totalAp += e.ap || 0;
+        totalMk += e.mk || 0;
+        totalRm += e.rm || 0;
+        totalOp += e.op || 0;
+        totalAPS += e.aps || 0;
+        totalMKS += e.mks || 0;
+        totalRMS += e.rms || 0;
+        totalOPS += e.ops || 0;
+        totalSalary += e.total || 0;
+        totalPiecesSum += (e.ap || 0) + (e.mk || 0) + (e.rm || 0) + (e.op || 0);
+
+        tbody.innerHTML += `<tr>
+            <td>${i+1}</td><td>${e.date || ""}</td>
+            <td>${e.ap || 0}</td><td>${e.mk || 0}</td><td>${e.rm || 0}</td><td>${e.op || 0}</td>
+            <td>${(e.aps || 0).toFixed(2)}</td><td>${(e.mks || 0).toFixed(2)}</td>
+            <td>${(e.rms || 0).toFixed(2)}</td><td>${(e.ops || 0).toFixed(2)}</td>
+            <td>${(e.total || 0).toFixed(2)}</td>
+        </tr>`;
+    });
+
+    // TOTAL row update
+    document.querySelector("#totalRow").innerHTML = `
+        <td colspan="2">TOTAL</td>
+        <td>${totalAp}</td><td>${totalMk}</td><td>${totalRm}</td><td>${totalOp}</td>
+        <td>${totalAPS.toFixed(2)}</td><td>${totalMKS.toFixed(2)}</td>
+        <td>${totalRMS.toFixed(2)}</td><td>${totalOPS.toFixed(2)}</td>
+        <td>${totalSalary.toFixed(2)}</td>
+    `;
+
+    // Stats
+    let today = new Date().toISOString().split("T")[0];
+    let todayEntry = entries.find(e => e.date === today);
+    let todaySalary = todayEntry ? todayEntry.total : 0;
+    let monthlyAvgPieces = entries.length ? totalPiecesSum / entries.length : 0;
+    let monthlyAvgSalary = entries.length ? totalSalary / entries.length : 0;
+
+    document.getElementById("todaySalary").innerText = `Today Salary: ₹${todaySalary.toFixed(2)}`;
+    document.getElementById("monthlyAvgPieces").innerText = `Monthly Avg Pieces: ${monthlyAvgPieces.toFixed(2)}`;
+    document.getElementById("monthlyAvgSalary").innerText = `Monthly Avg Salary: ₹${monthlyAvgSalary.toFixed(2)}`;
+    document.getElementById("totalSalary").innerText = `Total Salary: ₹${totalSalary.toFixed(2)}`;
+
+    function updateProfile() {
+        let newName = document.getElementById("newFullName").value.trim();
+        let newPassword = document.getElementById("newPassword").value.trim();
+        let currentUser = JSON.parse(localStorage.getItem("loggedUser") || "null");
+
+        if (!currentUser) {
+            alert("યૂઝર મળ્યો નહીં.");
+            return;
+        }
+
+        if (!newName || !newPassword) {
+            alert("નવું નામ અને પાસવર્ડ નાખો.");
+            return;
+        }
+
+        let users = JSON.parse(localStorage.getItem("users") || "[]");
+
+        // old username match
+        let index = users.findIndex(u => u.username === currentUser.username);
+        if (index !== -1) {
+            users[index].fullname = newName;
+            users[index].password = newPassword;
+
+            // update logged user too
+            localStorage.setItem("loggedUser", JSON.stringify(users[index]));
+            localStorage.setItem("users", JSON.stringify(users));
+
+            document.getElementById("empName").value = newName;
+
+            alert("✅ Profile successfully updated!");
+        } else {
+            alert("યૂઝર અપડેટ થયો નહિ.");
+        }
+    }
+
+    
+
+
+}
+</script>
+</body>
+</html>

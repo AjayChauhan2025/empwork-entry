@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+body {
+    font-family: Arial;
+    background: #f0f2f5;
+}
+
+/* Logout Button */
+.logout-btn {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    background: #dc3545;
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.logout-btn:hover {
+    background: #c82333;
+}
+
+/* Card box */
+.card {
+    background: white;
+    padding: 15px;
+    margin: 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Tabs */
+.tab-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 20px;
+}
+.tab-buttons button {
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    background: #2d6cdf;
+    color: white;
+    border-radius: 4px;
+    font-weight: bold;
+}
+.tab-buttons button.active {
+    background: #1f4e9b;
+}
+
+/* Form */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.form-group input {
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: center;
+}
+th {
+    background: #2d6cdf;
+    color: white;
+}
+tbody tr:nth-child(odd) {background: #fff;}
+tbody tr:nth-child(even) {background: #f9faff;}
+tfoot tr {
+    font-weight: bold;
+    background: #ffe599;
+}
+
+/* Button styles */
+.btn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.btn-green {background: #28a745; color: white;}
+.btn-blue {background: #007bff; color: white;}
+.btn-red {background: #dc3545; color: white;}
+.btn-excel {background: #1d6f42; color: white;}
+.btn-pdf {background: #b31b1b; color: white;}
+.btn:hover {opacity: 0.9;}
+
+/* Summary box */
+    .summary {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    summary div {
+        padding: 15px;
+        border-radius: 10px;
+        flex: 1;
+        font-weight: bold;
+        box-shadow: 0 4px 4px rgba(0,0,0,0.1);
+    }
+
+    #todaySalary {
+        background: #ffe6e6;
+        color: #b30000;
+    }
+
+    #monthlyAvgPieces {
+        background: #e6f7ff;
+        color: #005580;
+    }
+
+    #monthlyAvgSalary {
+        background: #e6ffe6;
+        color: #006600;
+    }
+
+    #totalSalary {
+        background: #fff0e6;
+        color: #804000;
+    }
+
+
+.section {display: none;}
+.section.active {display: block;}
+</style>
+</head>
+<body>
+
+<!-- Logout -->
+<button class="logout-btn" onclick="logout()">🚪 Logout</button>
+
+<div class="tab-buttons">
+    <button id="btnUserManage" class="active" onclick="showSection('userManage')">User Manage</button>
+    <button id="btnReport" onclick="showSection('employeeReport')">Employee Report</button>
+</div>
+
+<!-- USER MANAGE -->
+<div id="userManage" class="section active">
+    <div class="card">
+        <h2>Add / Edit User</h2>
+        <div class="form-group">
+            <input type="text" id="username" placeholder="Username (unique)">
+            <input type="text" id="fullname" placeholder="Full Name">
+            <input type="password" id="password" placeholder="Password">
+        </div>
+        <br>
+        <button class="btn btn-green" onclick="addOrUpdateUser()">💾 Save User</button>
+    </div>
+
+    <div class="card">
+        <h2>Users List</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Password</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- EMPLOYEE REPORT -->
+<div id="employeeReport" class="section">
+    
+    <!-- Filter -->
+    <div class="card">
+        <h2>Filter</h2>
+        <select id="filterUserDropdown">
+            <option value="">-- Select User --</option>
+        </select>
+        <input type="date" id="filterFrom">
+        <input type="date" id="filterTo">
+        <button class="btn btn-blue" onclick="loadReport()">🔍 Search</button>
+        <button class="btn btn-excel" onclick="exportExcel()">⬇ Export Excel</button>
+        <button class="btn btn-pdf" onclick="exportPDF()">⬇ Export PDF</button>
+    </div>
+
+
+    <!-- Summary -->
+    <div class="card">
+        <h2>Summary</h2>
+        <div class="summary">
+            <div id="todaySalary">Today Salary: ₹0.00</div>
+            <div id="monthlyAvgPieces">Monthly Avg Pieces: 0</div>
+            <div id="monthlyAvgSalary">Monthly Avg Salary: ₹0.00</div>
+            <div id="totalSalary">Total Salary: ₹0.00</div>
+        </div>
+    </div>
+
+    <!-- Detailed Entries Table -->
+    <div class="card" style="max-height:400px; overflow:auto;">
+        <h2>Entries</h2>
+        <table id="detailTable">
+            <thead>
+                <tr>
+                    <th>name</th>
+                    <th>Date</th>
+                    <th>Active</th>
+                    <th>Marking</th>
+                    <th>ReMarking</th>
+                    <th>OutParty</th>
+                    <th>ActivePartSalary</th>
+                    <th>MarkingSalary</th>
+                    <th>ReMarkingSalary</th>
+                    <th>OutPartySalary</th>
+                    <th>TotalSalary</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2">TOTAL</td>
+                    <td id="tAP">0</td>
+                    <td id="tMK">0</td>
+                    <td id="tRM">0</td>
+                    <td id="tOP">0</td>
+                    <td id="tAPSal">₹0.00</td>
+                    <td id="tMKSal">₹0.00</td>
+                    <td id="tRMSal">₹0.00</td>
+                    <td id="tOPSal">₹0.00</td>
+                    <td id="tTotalSal">₹0.00</td>
+
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<script>
+    let users = JSON.parse(localStorage.getItem("users") || "[]");
+    let workEntries = JSON.parse(localStorage.getItem("workEntries") || "[]");
+
+    filtered.forEach((e, i) => {
+        // ✅ જો salary fields ખાલી હોય તો runtime પર ગણતરી કરો
+        e.apsal = e.apsal || (e.ap || 0) * 2.6;
+        e.mksal = e.mksal || (e.mk || 0) * 2.3;
+        e.rmsal = e.rmsal || (e.rm || 0) * 3.0;
+        e.opsal = e.opsal || (e.op || 0) * 2.6;
+        e.total = e.total || (e.apsal + e.mksal + e.rmsal + e.opsal);
+
+        // પછી એ ડેટા ટેબલમાં દેખાડો
+        tbody.innerHTML += `
+      <tr>
+        <td>${e.name}</td>
+        <td>${e.date}</td>
+        <td>${e.ap}</td>
+        <td>${e.apsal}</td>
+        <td>${e.mk}</td>
+        <td>${e.mksal}</td>
+        <td>${e.rm}</td>
+        <td>${e.rmsal}</td>
+        <td>${e.op}</td>
+        <td>${e.opsal}</td>
+        <td><strong>${e.total}</strong></td>
+       
+    </td>
+      </tr>`;
+    });
+    workEntries.push(newEntry);
+    localStorage.setItem("workEntries", JSON.stringify(workEntries));
+
+function logout() {
+    localStorage.removeItem("loggedUser");
+    window.location.href = "login.html";
+}
+
+function showSection(id) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    document.querySelectorAll(".tab-buttons button").forEach(b => b.classList.remove("active"));
+    document.getElementById(id === "userManage" ? "btnUserManage" : "btnReport").classList.add("active");
+    if (id === "userManage") loadUsers();
+}
+
+    // USER MANAGE FUNCTIONS
+function addOrUpdateUser() {
+    let uname = document.getElementById("username").value.trim();
+    let fname = document.getElementById("fullname").value.trim();
+    let pass = document.getElementById("password").value.trim();
+    if(!uname || !fname || !pass) { alert("Please fill all fields"); return; }
+    let idx = users.findIndex(u => u.username === uname);
+    if(idx >= 0) { users[idx].fullname = fname; users[idx].password = pass; }
+    else { users.push({username: uname, fullname: fname, password: pass}); }
+    localStorage.setItem("users", JSON.stringify(users));
+    loadUsers();
+    clearUserForm();
+}
+function clearUserForm() {
+    document.getElementById("username").value = "";
+    document.getElementById("fullname").value = "";
+    document.getElementById("password").value = "";
+}
+    function loadUsers() {
+        users = JSON.parse(localStorage.getItem("users") || "[]");
+        let tbody = document.getElementById("userTable");
+        tbody.innerHTML = "";
+        users.forEach(u => {
+            tbody.innerHTML += `<tr>
+            <td>${u.username}</td>
+            <td>${u.fullname}</td>
+            <td>${u.password}</td>
+            <td>
+                <button class="btn btn-blue" onclick="editUser('${u.username}')">✏ Edit</button>
+                <button class="btn btn-red" onclick="deleteUser('${u.username}')">🗑 Delete</button>
+            </td>
+        </tr>`;
+        });
+
+        // Update employee dropdown
+        let dropdown = document.getElementById("filterUserDropdown");
+        if (dropdown) {
+            dropdown.innerHTML = `<option value="">-- Select User --</option>`;
+            users.forEach(u => {
+                dropdown.innerHTML += `<option value="${u.fullname}">${u.fullname}</option>`;
+            });
+        }
+    }
+    function addUser() {
+        let name = document.getElementById("name").value.trim();
+        let username = document.getElementById("username").value.trim();
+        let password = document.getElementById("password").value.trim();
+
+        if (!name || !username || !password) {
+            alert("તમામ ફીલ્ડ ભરો");
+            return;
+        }
+
+        let users = JSON.parse(localStorage.getItem("users") || "[]");
+
+        // Duplicate username cheકે નહિ તે ચકાસો
+        if (users.some(u => u.username === username)) {
+            alert("આ username પહેલેથી હાજર છે");
+            return;
+        }
+
+        users.push({ fullname: name, username, password });
+        localStorage.setItem("users", JSON.stringify(users));
+
+        alert("યૂઝર સફળતાપૂર્વક ઉમેરાયો!");
+    }
+
+
+function editUser(username) {
+    let u = users.find(x => x.username === username);
+    if(u){
+        document.getElementById("username").value = u.username;
+        document.getElementById("fullname").value = u.fullname;
+        document.getElementById("password").value = u.password;
+    }
+}
+function deleteUser(username) {
+    if(confirm("Delete user?")){
+        users = users.filter(u => u.username !== username);
+        localStorage.setItem("users", JSON.stringify(users));
+        loadUsers();
+    }
+}
+
+// REPORT FUNCTIONS
+    function loadReport() {
+        let nameFilter = document.getElementById("filterUserDropdown").value.trim().toLowerCase();  // <-- use dropdown
+        let fromDate = document.getElementById("filterFrom").value;
+        let toDate = document.getElementById("filterTo").value;
+
+        let filtered = workEntries.filter(e => {
+            let matchName = !nameFilter || e.name?.toLowerCase().includes(nameFilter);
+            let matchDate = true;
+            if (fromDate && e.date < fromDate) matchDate = false;
+            if (toDate && e.date > toDate) matchDate = false;
+            return matchName && matchDate;
+        });
+
+        // ✅ Salary fields runtime પર ગણતરી કરો
+        filtered.forEach(e => {
+            e.ap = e.ap || 0;
+            e.mk = e.mk || 0;
+            e.rm = e.rm || 0;
+            e.op = e.op || 0;
+
+            e.apsal = e.apsal || (e.ap * 2.6);
+            e.mksal = e.mksal || (e.mk * 2.3);
+            e.rmsal = e.rmsal || (e.rm * 3.0);
+            e.opsal = e.opsal || (e.op * 2.6);
+            e.total = e.total || (e.apsal + e.mksal + e.rmsal + e.opsal);
+        });
+
+
+    // Summary calculations
+    let today = new Date().toISOString().split("T")[0];
+    let todaySalary = filtered.filter(e => e.date === today).reduce((sum, e) => sum + (e.total || 0), 0);
+    let totalPieces = filtered.reduce((sum, e) => sum + (e.ap||0)+(e.mk||0)+(e.rm||0)+(e.op||0), 0);
+    let totalSalary = filtered.reduce((sum, e) => sum + (e.total || 0), 0);
+    let days = new Set(filtered.map(e => e.date)).size || 1;
+    let monthlyAvgPieces = totalPieces / days;
+    let monthlyAvgSalary = totalSalary / days;
+
+    document.getElementById("todaySalary").textContent = `Today Salary: ₹${todaySalary.toFixed(2)}`;
+    document.getElementById("monthlyAvgPieces").textContent = `Monthly Avg Pieces: ${monthlyAvgPieces.toFixed(2)}`;
+    document.getElementById("monthlyAvgSalary").textContent = `Monthly Avg Salary: ₹${monthlyAvgSalary.toFixed(2)}`;
+    document.getElementById("totalSalary").textContent = `Total Salary: ₹${totalSalary.toFixed(2)}`;
+
+    let tbody = document.querySelector("#detailTable tbody");
+    tbody.innerHTML = "";
+
+    let totalAP = 0, totalMK = 0, totalRM = 0, totalOP = 0;
+    let totalAPSal = 0, totalMKSal = 0, totalRMSal = 0, totalOPSal = 0, totalTotalSal = 0;
+
+    filtered.forEach((e, i) => {
+        tbody.innerHTML += `<tr>
+            <td>${e.name}</td>
+            <td>${e.date}</td>
+            <td>${e.ap || 0}</td>
+            <td>${e.mk || 0}</td>
+            <td>${e.rm || 0}</td>
+            <td>${e.op || 0}</td>
+            <td>₹${(e.apsal || 0).toFixed(2)}</td>
+            <td>₹${(e.mksal || 0).toFixed(2)}</td>
+            <td>₹${(e.rmsal || 0).toFixed(2)}</td>
+            <td>₹${(e.opsal || 0).toFixed(2)}</td>
+            <td>₹${(e.total || 0).toFixed(2)}</td>
+             <td>
+ <button class="btn btn-blue" onclick="editEntry(${i})">✏</button>
+ <button class="btn btn-red" onclick="deleteEntry(${i})">🗑</button>
+        </tr>`;
+
+        totalAP += (e.ap || 0);
+        totalMK += (e.mk || 0);
+        totalRM += (e.rm || 0);
+        totalOP += (e.op || 0);
+        totalAPSal += (e.apsal || 0);
+        totalMKSal += (e.mksal || 0);
+        totalRMSal += (e.rmsal || 0);
+        totalOPSal += (e.opsal || 0);
+        totalTotalSal += (e.total || 0);
+    });
+
+    // Update fixed total row
+    document.getElementById("tAP").textContent = totalAP;
+    document.getElementById("tMK").textContent = totalMK;
+    document.getElementById("tRM").textContent = totalRM;
+    document.getElementById("tOP").textContent = totalOP;
+    document.getElementById("tAPSal").textContent = `₹${totalAPSal.toFixed(2)}`;
+    document.getElementById("tMKSal").textContent = `₹${totalMKSal.toFixed(2)}`;
+    document.getElementById("tRMSal").textContent = `₹${totalRMSal.toFixed(2)}`;
+    document.getElementById("tOPSal").textContent = `₹${totalOPSal.toFixed(2)}`;
+    document.getElementById("tTotalSal").textContent = `₹${totalTotalSal.toFixed(2)}`;
+}
+
+// Export functions
+function exportExcel() {
+    let table = document.getElementById("detailTable");
+    let wb = XLSX.utils.table_to_book(table, {sheet:"Employee Report"});
+    XLSX.writeFile(wb, "Employee_Report.xlsx");
+}
+function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Employee Report", 14, 10);
+    doc.autoTable({ html: '#detailTable', startY: 20 });
+    doc.save('Employee_Report.pdf');
+    }
+    function editEntry(index) {
+        const entry = workEntries[index];
+        const newAP = prompt("Enter Active Pieces", entry.ap);
+        const newMK = prompt("Enter Marking Pieces", entry.mk);
+        const newRM = prompt("Enter ReMarking Pieces", entry.rm);
+        const newOP = prompt("Enter OutParty Pieces", entry.op);
+
+        if (newAP !== null && newMK !== null && newRM !== null && newOP !== null) {
+            entry.ap = parseInt(newAP) || 0;
+            entry.mk = parseInt(newMK) || 0;
+            entry.rm = parseInt(newRM) || 0;
+            entry.op = parseInt(newOP) || 0;
+
+            entry.apsal = entry.ap * 2.6;
+            entry.mksal = entry.mk * 2.3;
+            entry.rmsal = entry.rm * 3.0;
+            entry.opsal = entry.op * 2.6;
+            entry.total = entry.apsal + entry.mksal + entry.rmsal + entry.opsal;
+
+            localStorage.setItem("workEntries", JSON.stringify(workEntries));
+            loadReport();
+        }
+    }
+    function deleteEntry(index) {
+        if (confirm("Are you sure you want to delete this entry?")) {
+            workEntries.splice(index, 1);
+            localStorage.setItem("workEntries", JSON.stringify(workEntries));
+            loadReport();
+        }
+    }
+    window.onload = function () {
+        let user = JSON.parse(localStorage.getItem("loggedUser") || "{}");
+
+        if (user && user.fullname) {
+            document.getElementById("empName").value = user.fullname;
+            document.getElementById("empName").readOnly = true;
+        } else {
+            alert("યૂઝર મળ્યો નહીં. ફરીથી લોગિન કરો.");
+            window.location.href = "login.html";
+        }
+    };
+
+
+
+
+loadUsers();
+</script>
+</body>
+</html>

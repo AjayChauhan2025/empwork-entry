@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<style>
+@keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(-45deg, #2d6cdf, #6a5acd, #20b2aa, #ff7f50);
+    background-size: 400% 400%;
+    animation: gradientBG 12s ease infinite;
+}
+
+/* Glassmorphic Login Box */
+.login-box {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 30px;
+    width: 320px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    backdrop-filter: blur(12px);
+    color: white;
+}
+
+.login-box h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+    background: rgba(255,255,255,0.25);
+    color: white;
+}
+
+.input-group input::placeholder {
+    color: rgba(255,255,255,0.7);
+}
+
+/* Green Login Button */
+.btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #28a745; /* Green */
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: #218838; /* Darker Green */
+}
+
+.error {
+    color: #ffcccc;
+    font-size: 13px;
+    margin-top: 10px;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="login-box">
+    <h2>Welcome Back</h2>
+    <div class="input-group">
+        <input type="text" id="username" placeholder="Username">
+    </div>
+    <div class="input-group">
+        <input type="password" id="password" placeholder="Password">
+    </div>
+    <button class="btn" onclick="login()">Login</button>
+    <div class="error" id="errorMsg"></div>
+</div>
+
+<script>
+    function login() {
+        let uname = document.getElementById("username").value.trim();
+        let pass = document.getElementById("password").value.trim();
+        let errorMsg = document.getElementById("errorMsg");
+        errorMsg.textContent = "";
+
+        if (!uname || !pass) {
+            errorMsg.textContent = "કૃપા કરીને યુઝરનેમ અને પાસવર્ડ નાખો.";
+            return;
+        }
+
+        // localStorage માંથી બધા યુઝરો મેળવો
+        let users = JSON.parse(localStorage.getItem("users") || "[]");
+
+        // જો admin પહેલાથી હાજર ન હોય તો એડ કરો
+        if (!users.find(u => u.username === "admin")) {
+            users.push({ username: "admin", fullname: "Administrator", password: "admin" });
+            localStorage.setItem("users", JSON.stringify(users));
+        }
+
+        // યુઝરને શોધો
+        let user = users.find(u => u.username === uname && u.password === pass);
+
+        if (!user) {
+            errorMsg.textContent = "યૂઝર મળ્યો નહીં. ફરીથી લોગિન કરો.";
+            return;
+        }
+
+        // સફળ લોગિન પછી યુઝરને localStorage માં સેટ કરો
+        localStorage.setItem("loggedUser", JSON.stringify(user));
+
+        // યુઝર role પ્રમાણે પેજ ખોલો
+        if (user.username === "admin") {
+            window.location.href = "admin.html";
+        } else {
+            window.location.href = "workentry.html";
+        }
+    }
+
+    </script>
+</body>
+</html>
